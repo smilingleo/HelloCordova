@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+    <title>Acceleration Example</title>
+    
+    <style type="text/css">
+        body {
+            background: #dddddd;
+        }
+        #canvas {
+            background: #ffffff;
+            border: thin inset #aaaaaa;
+            width: 100%;
+            height: 80%;
+        }
+        
+        #accelerometer {
+            background-color:#EEEEEE;
+            height:200px;
+            width:400px;
+            float:left;
+            display: block;
+        }
+    </style>
+
+</head>
+<body>
+    <canvas id="canvas" width="300" height="300">
+        Canvas Not Supported
+    </canvas>
+
+    <div id="accelerometer"> Waiting for accelerometer... </div>
+
+    <script type="text/javascript" charset="utf-8" src="cordova-2.7.0.js"></script>
+    <script type="text/javascript" charset="utf-8">
+    	alert("test0");
+
+        var speedX = 0, speedY = 0, 
+	        DAMPING = 3,
+	        BOUNCE = 0.5,
+	        RADIUS = 20,
+	        watchID = null,
+	        INTERVAL = 40,
+	        FPS = 1000 / INTERVAL,
+	        T = FPS / 1000;
+        
+		alert("test1");
+	    // The watch id references the current `watchAcceleration`
+	    var canvas = document.getElementById('canvas'),
+	        context = canvas.getContext('2d'),
+	        offscreenCanvas = document.createElement('canvas'),
+	        offscreenContext = offscreenCanvas.getContext('2d');
+
+		alert("test2");
+			
+        canvas.width = screen.width - 6;
+        canvas.height = screen.height - 6;
+        
+        // for double buffering
+        offscreenCanvas.width = canvas.width;
+        offscreenCanvas.height = canvas.height;
+
+        lastX = canvas.width / 2;
+        lastY = canvas.height / 2;
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+	
+	
+	    // Wait for Cordova to load
+	    //
+	
+	    function drawBall(x, y) {
+	        // clear first
+	        offscreenContext.clearRect(0, 0, canvas.width, canvas.height);
+	        // initialize the ball.
+	        offscreenContext.font = '48pt Helvetica';
+	        offscreenContext.strokeStyle = 'blue';
+	        offscreenContext.fillStyle = 'red';
+	        offscreenContext.lineWidth = '2'; // Line width set to 2 for text
+	
+	        // draw the object
+	        offscreenContext.beginPath();
+	
+	        if (x < RADIUS) { // hit the left border
+	            lastX = RADIUS;
+	            speedX = -speedX * BOUNCE;
+	        } else if (x + RADIUS > canvas.width) { // hit the right border
+	            lastX = canvas.width - RADIUS;
+	            speedX = -speedX * BOUNCE;
+	        } else {
+	            lastX = x;
+	        }
+	
+	        if (y < RADIUS) { // hit the top
+	            lastY = RADIUS;
+	            speedY = -speedY * BOUNCE;
+	        } else if (y + RADIUS > canvas.height) { // hit the bottom
+	            lastY = canvas.height - RADIUS;
+	            speedY = -speedY * BOUNCE;
+	        } else {
+	            lastY = y;
+	        }
+	
+	        offscreenContext.arc(lastX, lastY, RADIUS, 0, Math.PI * 2, true);
+	        offscreenContext.fill();
+	
+	        context.clearRect(0, 0, canvas.width, canvas.height);
+	        context.drawImage(offscreenCanvas, 0, 0);
+	    }
+	
+	    // Cordova is ready
+	    //
+	
+	    function onDeviceReady() {
+	        startWatch();
+	    }
+	
+	    // Start watching the acceleration
+	    //
+	
+	    function startWatch() {
+	        // Update acceleration every 3 seconds
+	        var options = {
+	            frequency: FPS
+	        };
+	
+	        watchID = navigator.accelerometer.watchAcceleration(onSuccess, onError, options);
+	    }
+	
+	    // Stop watching the acceleration
+	    //
+	
+	    function stopWatch() {
+	        if (watchID) {
+	            navigator.accelerometer.clearWatch(watchID);
+	            watchID = null;
+	        }
+	    }
+	
+	    // onSuccess: Get a snapshot of the current acceleration
+	    //
+	
+	    function onSuccess(acceleration) {
+	        var x = acceleration.x,
+	            y = acceleration.y,
+	            z = acceleration.z;
+	        // V = V0 + a*t
+	        speedX += x;
+	        speedY += y;
+	
+	        // Distance = V * T
+	        lastX = lastX - speedX * T;
+	        lastY = lastY + speedY * T;
+	
+	        drawBall(lastX, lastY);
+	
+	        var element = document.getElementById('accelerometer');
+	        element.innerHTML = 'Acceleration X: ' + x + '<br />' +
+	            'Acceleration Y: ' + y + '<br />' +
+	            'Acceleration Z: ' + z + '<br />' +
+	            'speedX:         ' + speedX + '<br />' +
+	            'speedY:         ' + speedY + '<br />' +
+	            'Timestamp: ' + acceleration.timestamp + '<br />';
+	    }
+	
+	    // onError: Failed to get the acceleration
+	    //
+	
+	    function onError() {
+	        alert('onError!');
+	    }
+    </script>
+
+</body>
+</html>
